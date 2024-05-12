@@ -163,10 +163,10 @@ const TodoList = () => {
                 <div className="flex w-full justify-between content-between gap-2">
                   <div className="flex min-w-0 gap-x-4">
                     <div className="min-w-0 flex-auto">
-                      <p className="text-sm font-semibold leading-6 text-gray-900">
+                      <p className="text-xl font-semibold leading-6 text-gray-900">
                         {todo?.title}
                       </p>
-                      <p className="mt-1 truncate text-xs leading-5 text-gray-500">
+                      <p className="mt-1 truncate text-lg leading-5 text-gray-500">
                         {todo?.description}
                       </p>
                       <p>
@@ -181,7 +181,7 @@ const TodoList = () => {
                     </div>
                   </div>
                   <div className="shrink-0 sm:flex sm:flex-col sm:items-end">
-                    <p className="text-sm leading-6 text-gray-900">
+                    <p className="text-sm leading-6 text-gray-900  bg-yellow-300 px-1 py-1 rounded-md">
                       Priority: {todo?.priority}
                     </p>
                     <p className="mt-1 text-xs leading-5 text-gray-500">
