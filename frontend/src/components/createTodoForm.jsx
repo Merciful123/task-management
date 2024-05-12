@@ -1,57 +1,70 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { Link, useParams } from "react-router-dom";
-
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createTodoAsync,
+  fetchTodosByIdAsync,
+  selectTodoById,
+  selectedTodoListState,
+  updateTodoAsync,
+} from "../features/todoSlice";
 
 const CreateTodo = () => {
+  const selected = useSelector(selectTodoById);
+
   const [todo, setTodo] = useState({
-    title: "",
-    description: "",
-    priority: "medium",
-    category: "",
-    completed: false,
+    title: selected?.title || "",
+    description: selected?.description || "",
+    priority: selected?.priority || "medium",
+    category: selected?.category || "",
+    completed: selected?.completed || false,
   });
+
+  const status = useSelector(selectedTodoListState);
+  useEffect(() => {
+    // Populate the form with selected todo data when available
+    if (params?.id && selected) {
+      setTodo({
+        title: selected.title,
+        description: selected.description,
+        priority: selected.priority,
+        category: selected.category,
+        completed: selected.completed,
+      });
+    } else {
+      // Reset the form when no todo is selected
+      setTodo({
+        title: "",
+        description: "",
+        priority: "medium",
+        category: "",
+        completed: false,
+      });
+    }
+  }, [selected]);
+
+  // Rest of your component code...
   const [alert, setAlert] = useState(null); // Alert state
   const [formErrors, setFormErrors] = useState({}); // Form validation errors
 
   const params = useParams();
 
+  const dispatch = useDispatch();
 
-  const fetchTodoById = async () => {
-    if (params?.id) {
+  const fetchTodoById = () => {
+    const id = params?.id;
+    if (id) {
       try {
-        const response = await axios.get(
-          `https://new-todo-0gxb.onrender.com/api/get-todo/${params?.id}`
-        );
-        setTodo(response?.data);
+        dispatch(fetchTodosByIdAsync(id));
       } catch (error) {
         console.log(error);
       }
     }
   };
+
   useEffect(() => {
     fetchTodoById();
-  }, [params?._id]);
-
-  //  getting all todos
-  const fetchTodoAll = async () => {
-    try {
-      const response = await axios.get(
-        `https://new-todo-0gxb.onrender.com/api/getall-todo`
-      );
-      console.log(response)
-      setTodo(response?.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  useEffect(() => {
-    fetchTodoAll();
-  }, []);
-  useEffect(() => {
-    fetchTodoById();
-  }, [params?._id]);
-
+  }, [params?.id]);
 
   // handling form data
   const handleChange = (e) => {
@@ -62,45 +75,47 @@ const CreateTodo = () => {
     });
   };
 
-  // addind and editing api call
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  //  update and create tasks handler
+
+  const handleSubmit = (e) => {
     e.preventDefault();
+    const id = params?.id;
     try {
-      // Stop form submission if validation fails
-      const isValid = validateForm(); // Validate form fields
+      const isValid = validateForm();
       if (!isValid) return;
       if (params?.id) {
-        // Update existing todo
-        await axios.put(
-          `https://new-todo-0gxb.onrender.com/api/update-todo/${params?.id}`,
-          todo
-        );
-       setAlert("Todo updated successfully!"); // Set alert message
-        setTimeout(() => {
-          setAlert(null);
-        }, 1000);
+        dispatch(updateTodoAsync({ todo, id }));
+        if (status === "idle") {
+          setAlert("Task Updated Successfully!");
+          setTimeout(() => {
+            setAlert(null);
+          }, 5000);
+        }
+         setTimeout(() => {
+          navigate("/");
+         }, 2000);
+        
       } else {
-        // Add new todo
-
-        await axios.post(
-          "https://new-todo-0gxb.onrender.com/api/create-todo",
-          todo
-        );
-        setAlert("Todo created successfully!"); // Set alert message
-        setTimeout(() => {
-          setAlert(null);
-        }, 1000);
+        dispatch(createTodoAsync(todo));
+        if (status === "idle") {
+          setAlert("Task created Successfully!");
+          setTimeout(() => {
+            setAlert(null);
+          }, 5000);
+          // fetch
+        }
+        setTodo({
+          title: "",
+          description: "",
+          priority: "medium",
+          category: "",
+          completed: false,
+        });
       }
-      setTodo({
-        title: "",
-        description: "",
-        priority: "medium",
-        category: "",
-        completed: false,
-      });
     } catch (error) {
-      console.error("Error submitting todo:", error.message);
+      console.log(error);
     }
   };
 
@@ -145,7 +160,7 @@ const CreateTodo = () => {
         </div>
       )}
       <div className="flex w-[50%] max-sm:w-[95%] justify-between px-2 mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">Create New Todo</h1>
+        <h1 className="text-2xl font-semibold mb-4">Create New Task</h1>
         <Link to="/">
           <div className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer border-2">
             Back
@@ -180,7 +195,7 @@ const CreateTodo = () => {
           <textarea
             id="description"
             name="description"
-            value={todo.description}
+            value={todo?.description}
             onChange={handleChange}
             className="w-full border-gray-300 rounded-md p-2 border-2"
             rows="3"
@@ -199,7 +214,7 @@ const CreateTodo = () => {
           <select
             id="priority"
             name="priority"
-            value={todo.priority}
+            value={todo?.priority}
             onChange={handleChange}
             className="w-full border-gray-300 rounded-md p-2 border-2"
           >
@@ -216,7 +231,7 @@ const CreateTodo = () => {
             type="text"
             id="category"
             name="category"
-            value={todo.category}
+            value={todo?.category}
             onChange={handleChange}
             className="w-full border-gray-300 rounded-md p-2 border-2"
           />
@@ -229,7 +244,7 @@ const CreateTodo = () => {
             type="checkbox"
             id="completed"
             name="completed"
-            checked={todo.completed}
+            checked={todo?.completed}
             onChange={(e) => setTodo({ ...todo, completed: e.target.checked })}
             className="rounded-md border-gray-300 p-2 border-2"
           />
@@ -238,7 +253,7 @@ const CreateTodo = () => {
           <input
             onClick={handleSubmit}
             type="submit"
-            value={params?.id ? "Edit Todo" : "Create Todo"}
+            value={params?.id ? "Edit Task" : "Create Taks"}
             className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer border-2"
           />
         </div>
@@ -249,19 +264,23 @@ const CreateTodo = () => {
 
 export default CreateTodo;
 
+import { Fragment, useRef } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
-import { Fragment, useRef } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+export const Modal = () => {
+  const [open, setOpen] = useState(true);
 
-export  const Modal = ()=> {
-  const [open, setOpen] = useState(true)
-
-  const cancelButtonRef = useRef(null)
+  const cancelButtonRef = useRef(null);
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-10" initialFocus={cancelButtonRef} onClose={setOpen}>
+      <Dialog
+        as="div"
+        className="relative z-10"
+        initialFocus={cancelButtonRef}
+        onClose={setOpen}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -289,16 +308,23 @@ export  const Modal = ()=> {
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <ExclamationTriangleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
+                      <ExclamationTriangleIcon
+                        className="h-6 w-6 text-red-600"
+                        aria-hidden="true"
+                      />
                     </div>
                     <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                      <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                      <Dialog.Title
+                        as="h3"
+                        className="text-base font-semibold leading-6 text-gray-900"
+                      >
                         Deactivate account
                       </Dialog.Title>
                       <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                          Are you sure you want to deactivate your account? All of your data will be permanently
-                          removed. This action cannot be undone.
+                          Are you sure you want to deactivate your account? All
+                          of your data will be permanently removed. This action
+                          cannot be undone.
                         </p>
                       </div>
                     </div>
@@ -327,5 +353,5 @@ export  const Modal = ()=> {
         </div>
       </Dialog>
     </Transition.Root>
-  )
-}
+  );
+};

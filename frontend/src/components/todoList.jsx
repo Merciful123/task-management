@@ -1,35 +1,43 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  deleteTodoAsync,
+  fetchAllTodosAsync,
+  selecAllTodo,
+  selectedTodoListState,
+} from "../features/todoSlice";
 
 const TodoList = () => {
-  const [todos, setTodos] = useState([]);
+  const todosData = useSelector(selecAllTodo);
+  const [todos, setTodos] = useState(todosData);
   const [sortByCategory, setSortByCategory] = useState(false);
   const [alert, setAlert] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
 
+  const dispatch = useDispatch(fetchAllTodosAsync());
+
+  // all these useEffects are used to re-reload data after sorting and filtering and making crud requests 
+
   useEffect(() => {
-    const fetchTodos = async () => {
-      try {
-        const response = await axios.get(
-          "https://new-todo-0gxb.onrender.com/api/getall-todo"
-        );
-        setTodos(response?.data);
-        console.log(todos)
-        console.log(response)
-      } catch (error) {
-        console.error("Error fetching todos:", error.message);
-      }
-    };
+    dispatch(fetchAllTodosAsync());
+    setTodos(todosData);
+  }, [todosData?.length]);
 
-    fetchTodos();
-  }, []);
+  useEffect(() => {
+   dispatch(fetchAllTodosAsync());
+  },[todosData])
 
+  useEffect(() => {
+    setTodos(todosData)
+    dispatch(fetchAllTodosAsync());
+  },  [priorityFilter, sortByCategory]);
+  
   // Function to sort todos
   const sortTodos = (criteria) => {
     const sortedTodos = [...todos];
@@ -66,22 +74,24 @@ const TodoList = () => {
     ? todos?.filter((todo) => todo?.priority === priorityFilter)
     : todos;
 
-  //delete modal
-  const handleDelete = async () => {
-    try {
-      const response = await axios.delete(
-        `https://new-todo-0gxb.onrender.com/api/delete-todo/${deleteId}`
-      );
-      console.log(response.data);
+  useEffect(() => {}, [filteredTodos]);
 
-      const newData = todos.filter((todo) => todo._id !== deleteId);
-      setTodos(newData);
+  //delete modal
+  const status = useSelector(selectedTodoListState);
+
+  const handleDelete = () => {
+    dispatch(deleteTodoAsync(deleteId));
+    if (status === "idle") {
+      // Filter out the deleted todo from the local state
+      const updatedTodos = todos.filter((todo) => todo._id !== deleteId);
+      setTodos(updatedTodos);
+      console.log(status)
+      
       setAlert("Todo deleted successfully!");
       setTimeout(() => {
         setAlert(null);
-      }, 1000);
-    } catch (error) {
-      console.error("Error deleting todo:", error.message);
+      }, 5000);
+      window.location.reload();
     }
   };
 
@@ -144,40 +154,45 @@ const TodoList = () => {
               <option value="high">High</option>
             </select>
           </div>
-          {filteredTodos?.length > 0 ? (
+          {filteredTodos?.length > 0  ? (
             filteredTodos?.map((todo) => (
               <li
-                key={todo._id}
+                key={todo?._id}
                 className="flex justify-between gap-x-6 py-8 shadow-lg px-4 max-sm:flex max-sm:flex-col border-2 border-black"
               >
                 <div className="flex w-full justify-between content-between gap-2">
                   <div className="flex min-w-0 gap-x-4">
                     <div className="min-w-0 flex-auto">
                       <p className="text-sm font-semibold leading-6 text-gray-900">
-                        {todo.title}
+                        {todo?.title}
                       </p>
                       <p className="mt-1 truncate text-xs leading-5 text-gray-500">
-                        {todo.description}
+                        {todo?.description}
                       </p>
                       <p>
                         Date:{" "}
-                        {format(new Date(todo.createdAt), "yyyy-MM-dd HH:mm")}
+                        {todo?.createdAt
+                          ? format(
+                              new Date(todo?.createdAt),
+                              "yyyy-MM-dd HH:mm"
+                            )
+                          : ""}
                       </p>
                     </div>
                   </div>
                   <div className="shrink-0 sm:flex sm:flex-col sm:items-end">
                     <p className="text-sm leading-6 text-gray-900">
-                      Priority: {todo.priority}
+                      Priority: {todo?.priority}
                     </p>
                     <p className="mt-1 text-xs leading-5 text-gray-500">
-                      Category: {todo.category ? todo.category : "NA"}
+                      Category: {todo?.category ? todo?.category : "NA"}
                     </p>
                     <p
                       className={`${
-                        todo.completed ? "bg-green-200" : "bg-red-200"
+                        todo?.completed ? "bg-green-200" : "bg-red-200"
                       } mt-1 text-xs leading-5 text-gray-500 px-2 py-1 rounded-md`}
                     >
-                      Status: {todo.completed ? "Completed" : "Incomplete"}
+                      Status: {todo?.completed ? "Completed" : "Incomplete"}
                     </p>
                   </div>
                 </div>
@@ -230,7 +245,7 @@ const TodoList = () => {
                       leaveFrom="opacity-100"
                       leaveTo="opacity-0"
                     >
-                      <div className="fixed inset-0 bg-black/25" />
+                      <div className="fixed inset-0 bg-black/5" />
                     </Transition.Child>
 
                     <div className="fixed inset-0 overflow-y-auto">
@@ -238,11 +253,11 @@ const TodoList = () => {
                         <Transition.Child
                           as={Fragment}
                           enter="ease-out duration-300"
-                          enterFrom="opacity-0 scale-95"
-                          enterTo="opacity-100 scale-100"
+                          enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                          enterTo="opacity-100 translate-y-0 sm:scale-100"
                           leave="ease-in duration-200"
-                          leaveFrom="opacity-100 scale-100"
-                          leaveTo="opacity-0 scale-95"
+                          leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                          leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
                           <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                             <Dialog.Title
