@@ -17,6 +17,7 @@ const TodoList = () => {
   const [sortByCategory, setSortByCategory] = useState(false);
   const [alert, setAlert] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState("");
+  
   const [isOpen, setIsOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
 
@@ -127,8 +128,8 @@ const TodoList = () => {
           </span>
         </div>
       )}
-      <div className="flex w-screen justify-center">
-        <ul role="list" className=" w-[95%] divide-y divide-gray-100">
+      <div className="flex w-screen justify-center mt-4 max-sm:mt-1">
+        <ul role="list" className=" w-[95%] divide-y divide-gray-100 rounded-md">
           <div>
             <button onClick={() => sortTodos("priority")}>
               Sort by Priority
@@ -139,36 +140,41 @@ const TodoList = () => {
             <button onClick={() => setSortByCategory(!sortByCategory)}>
               Sort by Category
             </button>
-            <label htmlFor="priorityFilter" className="mr-2">
-              Filter by Priority:
-            </label>
-            <select
-              id="priorityFilter"
-              onChange={handlePriorityFilterChange}
-              value={priorityFilter}
-              className="border border-gray-300 rounded-md p-1"
-            >
-              <option value="">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+            <div className="max-sm:flex max-sm:justify-center">
+              <label htmlFor="priorityFilter" className="mr-2">
+                Filter by Priority:
+              </label>
+              <select
+                id="priorityFilter"
+                onChange={handlePriorityFilterChange}
+                value={priorityFilter}
+                className="border border-gray-300 rounded-md p-1"
+              >
+                <option value="">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
-          {filteredTodos?.length > 0  ? (
+          {filteredTodos?.length > 0 ? (
             filteredTodos?.map((todo) => (
               <li
                 key={todo?._id}
-                className="flex justify-between gap-x-6 py-8 shadow-lg px-4 max-sm:flex max-sm:flex-col border-2 border-black"
+                className="mt-4 max-sm:mt-1 flex justify-between gap-x-6 py-8 shadow-lg px-4 max-sm:flex max-sm:flex-col border-2 border-black flex-wrap overflow-y-auto"
               >
-                <div className="flex w-full justify-between content-between gap-2">
-                  <div className="flex min-w-0 gap-x-4">
+                <div className="flex w-full justify-between content-between gap-2 max-sm:grid max-sm:grid-cols-3">
+                  <div className="flex min-w-0 gap-x-4 col-span-2">
                     <div className="min-w-0 flex-auto">
-                      <p className="text-xl font-semibold leading-6 text-gray-900">
-                        {todo?.title}
-                      </p>
-                      <p className="mt-1 truncate text-lg leading-5 text-gray-500">
-                        {todo?.description}
-                      </p>
+                      <Link to={`/task/${todo?._id}`}>
+                        <p className="text-xl font-semibold leading-6 text-gray-900">
+                          {todo?.title}
+                        </p>
+                        <p className="mt-1 truncate text-lg leading-5 text-gray-500">
+                          {todo?.description}
+                        </p>
+                      </Link>
+
                       <p>
                         Date:{" "}
                         {todo?.createdAt

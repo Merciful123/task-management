@@ -159,7 +159,7 @@ const CreateTodo = () => {
           </span>
         </div>
       )}
-      <div className="flex w-[50%] max-sm:w-[95%] justify-between px-2 mx-auto">
+      <div className="flex w-[50%] max-sm:w-[95%] justify-between px-2 mx-auto mt-6">
         <h1 className="text-2xl font-semibold mb-4">Create New Task</h1>
         <Link to="/">
           <div className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer border-2">
